@@ -81,39 +81,65 @@ function injectQuickFillOption(forms) {
       console.log('allCreds:', JSON.stringify(allCreds));
 
       // Normalize both the live page URL and stored credential URLs for robust matching.
-      // window.location.host gives 'sky:366' for non-standard-protocol pages where
-      // window.location.hostname returns an empty string.
-      const pageHost = (window.location.host || window.location.hostname || currentDomain || '').toLowerCase();
-      console.log('pageHost for matching:', pageHost);
+      // For non-standard protocol pages like 'sky:366', window.location.host may be set
+      // while window.location.hostname remains empty.
+      const normalizeHost = (value) => {
+        if (!value || typeof value !== 'string') return '';
+        return value.toLowerCase().trim().replace(/^www\./, '');
+      };
 
-      // Extract the raw host from a credential's domain/url value.
-      // Stored values may be full URLs (e.g. 'http://sky:366/') or bare domains.
+      const stripPort = (host) => {
+        if (!host) return '';
+        return host.split(':')[0];
+      };
+
+      const pageHost = normalizeHost(window.location.host || window.location.hostname || currentDomain || '');
+      const pageHostBase = stripPort(pageHost);
+      const pageHref = window.location.href.toLowerCase();
+      console.log('pageHost for matching:', pageHost);
+      console.log('pageHostBase for matching:', pageHostBase);
+
       const credHost = (c) => {
-        const raw = c.url || c.domain || '';
-        return ValidationUtils.extractRawHost(raw) || raw.toLowerCase();
+        const raw = (c.url || c.domain || '').toString();
+        return normalizeHost(ValidationUtils.extractRawHost(raw) || raw);
+      };
+
+      const credHostMatches = (ch) => {
+        if (!ch || !pageHost) return false;
+        const credBase = stripPort(ch);
+        return (
+          ch === pageHost ||
+          pageHost === credBase ||
+          ch === pageHostBase ||
+          pageHost.includes(ch) ||
+          ch.includes(pageHost) ||
+          credBase === pageHostBase
+        );
       };
 
       // Log each credential's computed host
       allCreds.forEach(c => {
-        const ch = credHost(c).toLowerCase();
-        const matched = ch && pageHost && (ch === pageHost || ch.includes(pageHost) || pageHost.includes(ch));
+        const ch = credHost(c);
+        const matched = credHostMatches(ch);
         console.log(`  cred "${c.name}" → credHost:"${ch}" | match:${matched}`);
       });
 
       // Primary match: host-level comparison (covers standard and non-standard protocols)
       let matchedCred = allCreds.find(c => {
-        const ch = credHost(c).toLowerCase();
-        return ch && pageHost && (ch === pageHost || ch.includes(pageHost) || pageHost.includes(ch));
+        const ch = credHost(c);
+        return credHostMatches(ch);
       });
 
       console.log('Primary match:', matchedCred ? '✅ ' + matchedCred.name : '❌ none');
 
       // Secondary match: substring match on the full href (catches any edge cases)
       if (!matchedCred) {
-        matchedCred = allCreds.find(c =>
-          window.location.href.includes(c.domain) ||
-          (c.url && window.location.href.includes(c.url))
-        );
+        matchedCred = allCreds.find(c => {
+          const domainCandidate = (c.domain || '').toString().toLowerCase();
+          const urlCandidate = (c.url || '').toString().toLowerCase();
+          return (domainCandidate && pageHref.includes(domainCandidate)) ||
+            (urlCandidate && pageHref.includes(urlCandidate));
+        });
         console.log('Secondary match:', matchedCred ? '✅ ' + matchedCred.name : '❌ none');
       }
 
