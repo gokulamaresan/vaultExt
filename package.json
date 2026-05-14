@@ -1,0 +1,64 @@
+{
+  "name": "vaultguard-extension",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Enterprise-grade password manager Chrome extension built with React and Vite",
+  "author": "VaultGuard Team",
+  "license": "MIT",
+  "type": "module",
+  "homepage": "https://vaultguard.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vaultguard/extension.git"
+  },
+  "keywords": [
+    "chrome-extension",
+    "password-manager",
+    "security",
+    "autofill",
+    "react",
+    "vite"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:staging": "vite build --mode staging",
+    "build:prod": "vite build --mode production",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .js,.jsx --max-warnings 0",
+    "lint:fix": "eslint src --ext .js,.jsx --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,css,html,json}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,css,html,json}\"",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist node_modules"
+  },
+  "dependencies": {
+    "axios": "^1.6.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-react-pure-annotations": "^7.22.0",
+    "@crxjs/vite-plugin": "^2.0.0-beta.23",
+    "@eslint/js": "^8.56.0",
+    "@types/chrome": "^0.0.268",
+    "@types/node": "^20.10.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.1.0",
+    "rimraf": "^5.0.5",
+    "terser": "^5.47.1",
+    "vite": "^5.0.8"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "browserslist": [
+    "last 1 Chrome versions"
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "manifest_version": 3,
+  "name": "VaultGuard - Password Manager",
+  "version": "2.0.0",
+  "description": "Secure password manager with auto-fill capability for Chrome",
+  "author": "VaultGuard Team",
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "VaultGuard - Click to open"
+  },
+  "background": {
+    "service_worker": "service-worker-loader.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "assets/content-script.js-loader-CP1yHuxk.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ],
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "activeTab",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "MacCtrl+Shift+Y"
+      }
+    }
+  },
+  "minimum_chrome_version": "120",
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "resources": [
+        "assets/validation-utils-wrOhkYFy.js",
+        "assets/message-handler-BdV_t_Y0.js",
+        "assets/content-script.js-9Jmhg0Lz.js"
+      ],
+      "use_dynamic_url": false
+    }
+  ]
+}
