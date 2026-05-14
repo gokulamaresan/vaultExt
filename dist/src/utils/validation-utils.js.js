@@ -40,6 +40,7 @@ class ValidationUtils {
 
   /**
    * Extract domain from URL
+   * Handles standard URLs (http/https) and non-standard protocols (e.g. sky:366)
    * @param {string} url
    * @returns {string|null}
    */
@@ -47,6 +48,28 @@ class ValidationUtils {
     try {
       const urlObj = new URL(url);
       return urlObj.hostname.replace('www.', '');
+    } catch {
+      // Fallback: strip protocol and grab host segment for non-standard URLs
+      return ValidationUtils.extractRawHost(url);
+    }
+  }
+
+  /**
+   * Extract raw host from any URL string, including non-standard protocols.
+   * e.g. 'http://sky:366/' => 'sky:366'
+   *      'sky:366'         => 'sky:366'
+   *      'http://foo.com/bar' => 'foo.com'
+   * @param {string} url
+   * @returns {string|null}
+   */
+  static extractRawHost(url) {
+    if (!url || typeof url !== 'string') return null;
+    try {
+      // Remove protocol prefix (anything before ://)
+      const withoutProtocol = url.replace(/^[a-zA-Z][a-zA-Z0-9+\-.]*:\/\//, '');
+      // Remove path, query, hash — take only the host:port part
+      const hostPart = withoutProtocol.split('/')[0].split('?')[0].split('#')[0];
+      return hostPart.replace(/^www\./, '') || null;
     } catch {
       return null;
     }

@@ -14,7 +14,8 @@
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "src/background/service-worker.js"
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
   },
   "action": {
     "default_popup": "src/popup/popup.html",
@@ -38,7 +39,8 @@
       "js": [
         "src/content/content-script.js"
       ],
-      "run_at": "document_start"
+      "run_at": "document_start",
+      "type": "module"
     }
   ],
   "web_accessible_resources": [
@@ -50,8 +52,5 @@
         "<all_urls>"
       ]
     }
-  ],
-  "action": {
-    "default_title": "VaultGuard Password Manager"
-  }
+  ]
 }

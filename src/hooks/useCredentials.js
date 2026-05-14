@@ -36,6 +36,7 @@ export const useCredentials = () => {
     deleteCredential,
     syncVault,
     needsSync,
+    toggleFavorite,
   } = useCredentialsStore();
 
   // Fetch credentials when authenticated
@@ -112,5 +113,7 @@ export const useCredentials = () => {
     sync: handleSync,
     refetch: fetchCredentials,
     needsSync,
+    toggleFavorite,
   };
 };
+

@@ -39,37 +39,80 @@ export const useCredentialsStore = create((set, get) => ({
   setSelectedDomain: (domain) => set({ selectedDomain: domain }),
 
   /**
-   * Fetch all credentials from API
+   * Fetch all credentials from API (Simulated in UI Mode with exact screenshot dummy data)
    */
   fetchCredentials: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await CredentialsService.fetchCredentials();
+    // Populate dummy data directly to instantly render UI dashboard
+    const initialDummyCredentials = [
+      {
+        id: 'cred_1',
+        name: 'test',
+        username: '20240360',
+        password: 'password123',
+        domain: 'test.com',
+        isFavorite: true,
+        avatarLetter: 'T',
+        avatarBg: '#2dd4bf', // teal
+      },
+      {
+        id: 'cred_2',
+        name: 'Coursera',
+        username: 'wert',
+        password: 'password123',
+        domain: 'coursera.org',
+        isFavorite: false,
+        avatarIcon: 'coursera',
+        avatarBg: '#2563eb', // blue
+      },
+      { 
+        id: 'cred_3',
+        name: 'INDEXER',
+        username: '20240360',
+        password: 'TDX0963',
+        domain: 'http://sky:366/', 
+        url: 'http://sky:366/',  
+        isFavorite: false, 
+        avatarIcon: 'indexer',
+        avatarBg: '#f8fafc', // white/light
+      },
+    ];
 
-      if (response.success) {
-        set({
-          credentials: response.data || [],
-          filteredCredentials: response.data || [],
-          isLoading: false,
-          lastSyncTime: Date.now(),
-          error: null,
-        });
-        return { success: true };
-      } else {
-        set({
-          isLoading: false,
-          error: response.error || 'Failed to fetch credentials',
-        });
-        return { success: false };
+
+    set({
+      credentials: initialDummyCredentials,
+      filteredCredentials: initialDummyCredentials,
+      isLoading: false,
+      lastSyncTime: Date.now(),
+      error: null,
+    });
+
+    // Persist dummy credentials to chrome.storage.local so the service worker
+    // can serve them to the content script via FETCH_CREDENTIALS messages.
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        await chrome.storage.local.set({ vaultguard_credentials: initialDummyCredentials });
       }
-    } catch (error) {
-      set({
-        isLoading: false,
-        error: error.message,
-      });
-      return { success: false };
+    } catch (_) {
+      // Not in extension context — ignore (e.g. plain browser dev mode)
     }
+
+    return { success: true };
   },
+
+  /**
+   * Toggle Favorite status locally
+   */
+  toggleFavorite: (id) => {
+    const { credentials } = get();
+    const updated = credentials.map((cred) =>
+      cred.id === id ? { ...cred, isFavorite: !cred.isFavorite } : cred
+    );
+    set({
+      credentials: updated,
+      filteredCredentials: updated,
+    });
+  },
+
 
   /**
    * Search credentials

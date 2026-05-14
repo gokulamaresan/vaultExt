@@ -15,7 +15,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content-script.js-loader-CP1yHuxk.js"
+        "assets/content-script.js-loader-nMWWU2PB.js"
       ],
       "matches": [
         "<all_urls>"
@@ -53,9 +53,9 @@
         "<all_urls>"
       ],
       "resources": [
-        "assets/validation-utils-wrOhkYFy.js",
-        "assets/message-handler-BdV_t_Y0.js",
-        "assets/content-script.js-9Jmhg0Lz.js"
+        "assets/validation-utils-DsvMz1ka.js",
+        "assets/message-handler-z-7G5nBl.js",
+        "assets/content-script.js-Cx1TI7yl.js"
       ],
       "use_dynamic_url": false
     }

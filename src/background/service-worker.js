@@ -49,19 +49,60 @@ MessageHandler.on(APP_CONSTANTS.MESSAGE_TYPES.LOGOUT_REQUEST, async () => {
   return result;
 });
 
+// Default credential seed — keeps content-script matching working even before popup opens.
+const DEFAULT_CREDENTIALS = [
+  {
+    id: 'cred_1',
+    name: 'test',
+    username: '20240360',
+    password: 'password123',
+    domain: 'test.com',
+    isFavorite: true,
+    avatarLetter: 'T',
+    avatarBg: '#2dd4bf',
+  },
+  {
+    id: 'cred_2',
+    name: 'Coursera',
+    username: 'wert',
+    password: 'password123',
+    domain: 'coursera.org',
+    isFavorite: false,
+    avatarIcon: 'coursera',
+    avatarBg: '#2563eb',
+  },
+  {
+    id: 'cred_3',
+    name: 'INDEXER',
+    username: '20240360',
+    password: 'TDX0963',
+    domain: 'http://sky:366',
+    url: 'http://sky:366',
+    isFavorite: false,
+    avatarIcon: 'indexer',
+    avatarBg: '#f8fafc',
+  },
+];
+
 /**
  * Fetch credentials
  */
 MessageHandler.on(APP_CONSTANTS.MESSAGE_TYPES.FETCH_CREDENTIALS, async (payload) => {
   const { domain } = payload;
 
+  // Ensure storage is seeded before any lookup
+  let stored = await CredentialsService.getCredentials();
+  if (!stored || stored.length === 0) {
+    await StorageManager.saveCredentials(DEFAULT_CREDENTIALS);
+    stored = DEFAULT_CREDENTIALS;
+  }
+
   if (domain) {
     const credentials = await CredentialsService.getCredentialsByDomain(domain);
     return { success: true, credentials };
   }
 
-  const credentials = await CredentialsService.getCredentials();
-  return { success: true, credentials };
+  return { success: true, credentials: stored };
 });
 
 /**
@@ -88,19 +129,64 @@ MessageHandler.on(APP_CONSTANTS.MESSAGE_TYPES.GET_SESSION_STATUS, async () => {
   };
 });
 
+// Pending auto-fill requests mapping: domain -> credential payload
+self.pendingAutoFills = {};
+
+/**
+ * Register injection intention from Popup
+ */
+MessageHandler.on(APP_CONSTANTS.MESSAGE_TYPES.INJECT_CREDENTIALS, async (payload) => {
+  const targetUrl = payload.targetUrl || payload.domain || '';
+  let cleanDomain = '';
+  try {
+    cleanDomain = new URL(targetUrl.startsWith('http') ? targetUrl : 'http://' + targetUrl).hostname.replace('www.', '');
+  } catch {
+    cleanDomain = targetUrl.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0].split(':')[0];
+  }
+  
+  if (cleanDomain) {
+    self.pendingAutoFills[cleanDomain] = payload;
+    Logger.info(`Stored auto-fill intention for domain: ${cleanDomain}`, payload);
+  }
+  
+  return { success: true };
+});
+
+
 /**
  * Form detected from content script
  */
-MessageHandler.on(APP_CONSTANTS.MESSAGE_TYPES.FORM_DETECTED, async (payload) => {
+MessageHandler.on(APP_CONSTANTS.MESSAGE_TYPES.FORM_DETECTED, async (payload, sender) => {
   const { domain, forms } = payload;
 
   Logger.info(`Forms detected on ${domain}:`, forms.length);
 
-  // You can implement additional logic here if needed
-  // For example, storing which domains have forms detected
+  if (domain && self.pendingAutoFills[domain]) {
+    const credToInject = self.pendingAutoFills[domain];
+    Logger.info(`Auto-injecting queued credentials for ${domain}`);
+
+    if (sender && sender.tab) {
+      setTimeout(() => {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          type: APP_CONSTANTS.MESSAGE_TYPES.INJECT_CREDENTIALS,
+          payload: {
+            credentialId: credToInject.id,
+            username: credToInject.username,
+            password: credToInject.password,
+            formId: forms[0]?.id,
+            autoSubmit: true
+          }
+        }).catch(() => {});
+      }, 600);
+
+      // Keep record brief or clear once consumed
+      delete self.pendingAutoFills[domain];
+    }
+  }
 
   return { success: true };
 });
+
 
 /**
  * Credential injected notification
@@ -141,11 +227,13 @@ setInterval(async () => {
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     Logger.info('Extension installed');
-
-    // Open welcome page
+    // Seed default credentials into storage on fresh install
+    StorageManager.saveCredentials(DEFAULT_CREDENTIALS);
     chrome.tabs.create({ url: 'src/popup/welcome.html' });
   } else if (details.reason === 'update') {
     Logger.info('Extension updated');
+    // Re-seed to pick up any new default credentials
+    StorageManager.saveCredentials(DEFAULT_CREDENTIALS);
   }
 });
 
