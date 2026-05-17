@@ -15,7 +15,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content-script.js-loader-nMWWU2PB.js"
+        "assets/content-script.js-loader-ByCfIlx3.js"
       ],
       "matches": [
         "<all_urls>"
@@ -55,7 +55,7 @@
       "resources": [
         "assets/validation-utils-DsvMz1ka.js",
         "assets/message-handler-z-7G5nBl.js",
-        "assets/content-script.js-Cx1TI7yl.js"
+        "assets/content-script.js-Bkp_wjrI.js"
       ],
       "use_dynamic_url": false
     }

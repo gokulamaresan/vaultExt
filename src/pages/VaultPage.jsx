@@ -253,6 +253,10 @@ export const VaultPage = () => {
                           <circle cx="18" cy="18" r="3" fill="#eab308" />
                           <path d="M10 9l-2 6M14 9l2 6M8 18h8" stroke="#94a3b8" />
                         </svg>
+                      ) : cred.avatarIcon === 'bsnl' ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" className="custom-icon">
+                          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                        </svg>
                       ) : (
                         <span className="avatar-char">{cred.avatarLetter || cred.name.charAt(0)}</span>
                       )}

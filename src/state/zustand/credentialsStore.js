@@ -64,16 +64,27 @@ export const useCredentialsStore = create((set, get) => ({
         avatarIcon: 'coursera',
         avatarBg: '#2563eb', // blue
       },
-      { 
+      {
         id: 'cred_3',
         name: 'INDEXER',
         username: '20240360',
         password: 'TDX0963',
-        domain: 'http://sky:366/', 
-        url: 'http://sky:366/',  
-        isFavorite: false, 
+        domain: 'http://sky:366/',
+        url: 'http://sky:366/',
+        isFavorite: false,
         avatarIcon: 'indexer',
         avatarBg: '#f8fafc', // white/light
+      },
+      {
+        id: 'cred_4',
+        name: 'BSNL Portal',
+        username: 'gokulkrishna0963@gmail.com',
+        password: 'gokulA0963@',
+        domain: 'portal.bsnl.in',
+        url: 'https://portal.bsnl.in/myportal/authorize.do',
+        isFavorite: true,
+        avatarIcon: 'bsnl',
+        avatarBg: '#005baa', // BSNL blue
       },
     ];
 
@@ -285,21 +296,16 @@ export const useCredentialsStore = create((set, get) => ({
   syncVault: async () => {
     set({ isSyncing: true, error: null });
     try {
-      const response = await CredentialsService.syncVault();
+      // In this demo mode, we use the same fetch logic to populate dummy data
+      const result = await get().fetchCredentials();
 
-      if (response.success) {
-        set({
-          credentials: response.data || [],
-          filteredCredentials: response.data || [],
-          isSyncing: false,
-          lastSyncTime: Date.now(),
-          error: null,
-        });
+      if (result.success) {
+        set({ isSyncing: false });
         return { success: true };
       } else {
         set({
           isSyncing: false,
-          error: response.error || 'Sync failed',
+          error: 'Sync failed',
         });
         return { success: false };
       }

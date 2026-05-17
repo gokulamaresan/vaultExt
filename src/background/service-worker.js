@@ -82,6 +82,17 @@ const DEFAULT_CREDENTIALS = [
     avatarIcon: 'indexer',
     avatarBg: '#f8fafc',
   },
+  {
+    id: 'cred_4',
+    name: 'BSNL Portal',
+    username: 'gokulkrishna0963@gmail.com',
+    password: 'gokulA0963@',
+    domain: 'portal.bsnl.in',
+    url: 'https://portal.bsnl.in/myportal/authorize.do',
+    isFavorite: true,
+    avatarIcon: 'bsnl',
+    avatarBg: '#005baa',
+  },
 ];
 
 /**

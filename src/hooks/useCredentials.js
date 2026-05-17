@@ -41,10 +41,10 @@ export const useCredentials = () => {
 
   // Fetch credentials when authenticated
   useEffect(() => {
-    if (isAuthenticated && credentials.length === 0) {
+    if (isAuthenticated) {
       fetchCredentials();
     }
-  }, [isAuthenticated, fetchCredentials, credentials.length]);
+  }, [isAuthenticated, fetchCredentials]);
 
   // Auto-sync vault if needed
   useEffect(() => {
