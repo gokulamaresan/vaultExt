@@ -68,10 +68,24 @@ export const VaultPage = () => {
             // Compare the destination site against the currently active site window.
             // If the user is already viewing the target site, skip page reloads entirely
             // and trigger inline auto-fill injection on the matching live DOM elements instantly!
-            const cleanTarget = targetUrl.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0].split(':')[0];
-            const cleanCurrent = currentUrl.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0].split(':')[0];
+            const extractHostAndPort = (url) => {
+              if (!url) return { host: '', port: '' };
+              const clean = url.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+              const parts = clean.split(':');
+              return {
+                host: parts[0],
+                port: parts.length > 1 ? parts[1] : ''
+              };
+            };
 
-            if (cleanCurrent && cleanTarget && cleanCurrent.includes(cleanTarget)) {
+            const targetParsed = extractHostAndPort(targetUrl);
+            const currentParsed = extractHostAndPort(currentUrl);
+
+            const isSameSite = targetParsed.host && currentParsed.host &&
+                               targetParsed.host === currentParsed.host && 
+                               (targetParsed.port === currentParsed.port || !targetParsed.port || !currentParsed.port);
+
+            if (isSameSite) {
               console.log('Zoho Vault concept matched: already on target domain. Injecting live DOM directly.');
               chrome.tabs.sendMessage(currentTabId, {
                 type: 'INJECT_CREDENTIALS',

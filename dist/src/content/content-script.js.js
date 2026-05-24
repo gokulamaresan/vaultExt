@@ -63,47 +63,125 @@ function injectQuickFillOption(forms) {
 
     const currentDomain = ValidationUtils.extractDomain(window.location.href) || window.location.hostname;
 
+    console.group('%c[VaultGuard] Auto-fill triggered', 'color:#2563eb;font-weight:bold');
+    console.log('href    :', window.location.href);
+    console.log('host    :', window.location.host);
+    console.log('hostname:', window.location.hostname);
+    console.log('currentDomain (extracted):', currentDomain);
+    console.log('forms detected:', forms ? forms.length : 0);
+
     // Fetch credentials list directly via MessageHandler channel
     MessageHandler.send(APP_CONSTANTS.MESSAGE_TYPES.FETCH_CREDENTIALS, {}).then((res) => {
-      const allCreds = res?.credentials || [];
+      console.log('Raw FETCH_CREDENTIALS response:', JSON.stringify(res));
+
+      // MessageHandler wraps service worker responses as { success, data: <actual response> }
+      // Service worker returns { success, credentials: [...] } so we unwrap via res.data
+      const allCreds = res?.data?.credentials || res?.credentials || [];
+      console.log('allCreds count:', allCreds.length);
+      console.log('allCreds:', JSON.stringify(allCreds));
 
       // Normalize both the live page URL and stored credential URLs for robust matching.
-      // window.location.host gives 'sky:366' for non-standard-protocol pages where
-      // window.location.hostname returns an empty string.
-      const pageHost = (window.location.host || window.location.hostname || currentDomain || '').toLowerCase();
-
-      // Extract the raw host from a credential's domain/url value.
-      // Stored values may be full URLs (e.g. 'http://sky:366/') or bare domains.
-      const credHost = (c) => {
-        const raw = c.url || c.domain || '';
-        return ValidationUtils.extractRawHost(raw) || raw.toLowerCase();
+      // For non-standard protocol pages like 'sky:366', window.location.host may be set
+      // while window.location.hostname remains empty.
+      const normalizeHost = (value) => {
+        if (!value || typeof value !== 'string') return '';
+        return value.toLowerCase().trim().replace(/^www\./, '');
       };
+
+      const stripPort = (host) => {
+        if (!host) return '';
+        return host.split(':')[0];
+      };
+
+      const getPort = (hostOrUrl) => {
+        if (!hostOrUrl || typeof hostOrUrl !== 'string') return null;
+        const host = ValidationUtils.extractRawHost(hostOrUrl) || hostOrUrl;
+        const match = host.match(/:(\d+)$/);
+        return match ? match[1] : null;
+      };
+
+      const pageHost = normalizeHost(window.location.host || window.location.hostname || currentDomain || '');
+      const pageHostBase = stripPort(pageHost);
+      const pageHref = window.location.href.toLowerCase();
+      console.log('pageHost for matching:', pageHost);
+      console.log('pageHostBase for matching:', pageHostBase);
+
+      const credHost = (c) => {
+        const raw = (c.url || c.domain || '').toString();
+        return normalizeHost(ValidationUtils.extractRawHost(raw) || raw);
+      };
+
+      const credHostMatches = (ch) => {
+        if (!ch || !pageHost) return false;
+        
+        // Strict port validation: if both specify a port and they are different, do not match.
+        const credPort = getPort(ch);
+        const pagePort = getPort(pageHost);
+        if (credPort && pagePort && credPort !== pagePort) {
+          return false;
+        }
+
+        const credBase = stripPort(ch);
+        return (
+          ch === pageHost ||
+          pageHost === credBase ||
+          ch === pageHostBase ||
+          pageHost.includes(ch) ||
+          ch.includes(pageHost) ||
+          credBase === pageHostBase
+        );
+      };
+
+      // Log each credential's computed host
+      allCreds.forEach(c => {
+        const ch = credHost(c);
+        const matched = credHostMatches(ch);
+        console.log(`  cred "${c.name}" → credHost:"${ch}" | match:${matched}`);
+      });
 
       // Primary match: host-level comparison (covers standard and non-standard protocols)
       let matchedCred = allCreds.find(c => {
-        const ch = credHost(c).toLowerCase();
-        return ch && pageHost && (ch === pageHost || ch.includes(pageHost) || pageHost.includes(ch));
+        const ch = credHost(c);
+        return credHostMatches(ch);
       });
+
+      console.log('Primary match:', matchedCred ? '✅ ' + matchedCred.name : '❌ none');
 
       // Secondary match: substring match on the full href (catches any edge cases)
       if (!matchedCred) {
-        matchedCred = allCreds.find(c =>
-          window.location.href.includes(c.domain) ||
-          (c.url && window.location.href.includes(c.url))
-        );
+        matchedCred = allCreds.find(c => {
+          const domainCandidate = (c.domain || '').toString().toLowerCase();
+          const urlCandidate = (c.url || '').toString().toLowerCase();
+
+          // Port check for secondary match
+          const credPort = getPort(domainCandidate) || getPort(urlCandidate);
+          const pagePort = getPort(pageHost);
+          if (credPort && pagePort && credPort !== pagePort) {
+            return false;
+          }
+
+          return (domainCandidate && pageHref.includes(domainCandidate)) ||
+            (urlCandidate && pageHref.includes(urlCandidate));
+        });
+        console.log('Secondary match:', matchedCred ? '✅ ' + matchedCred.name : '❌ none');
       }
 
       if (matchedCred && forms && forms[0]) {
+        console.log('Injecting for:', matchedCred.name, '| user:', matchedCred.username);
+        console.groupEnd();
         FormDetectionService.injectCredentials(forms[0], matchedCred.username, matchedCred.password, true);
         widget.innerHTML = `<span>✨ Credentials Injected!</span>`;
-        setTimeout(() => {
-          widget.remove();
-        }, 1800);
+        setTimeout(() => { widget.remove(); }, 1800);
       } else {
+        console.warn('No match or no form found — showing alert');
+        console.log('matchedCred:', matchedCred, '| forms[0]:', forms && forms[0]);
+        console.groupEnd();
         alert('VaultGuard: No matching active user credentials configured for this URL workspace.');
         widget.innerHTML = originalContent;
       }
     }).catch((err) => {
+      console.error('[VaultGuard] FETCH_CREDENTIALS threw:', err);
+      console.groupEnd();
       Logger.warn('QuickFill action fetching warning:', err);
       widget.innerHTML = originalContent;
     });
