@@ -166,15 +166,31 @@ function injectQuickFillOption(forms) {
         console.log('Secondary match:', matchedCred ? '✅ ' + matchedCred.name : '❌ none');
       }
 
-      if (matchedCred && forms && forms[0]) {
+      if (matchedCred && forms && forms.length > 0) {
         console.log('Injecting for:', matchedCred.name, '| user:', matchedCred.username);
         console.groupEnd();
-        FormDetectionService.injectCredentials(forms[0], matchedCred.username, matchedCred.password, true);
-        widget.innerHTML = `<span>✨ Credentials Injected!</span>`;
-        setTimeout(() => { widget.remove(); }, 1800);
+
+        // Iterate through all detected forms to ensure we find the right one (BSNL has multiple forms)
+        let fillSuccess = false;
+        for (const form of forms) {
+          const success = FormDetectionService.injectCredentials(form, matchedCred.username, matchedCred.password, true);
+          if (success) {
+            fillSuccess = true;
+            break;
+          }
+        }
+
+        if (fillSuccess) {
+          widget.innerHTML = `<span>✨ Credentials Injected!</span>`;
+          setTimeout(() => { widget.remove(); }, 1800);
+        } else {
+          console.warn('Injection failed on all forms');
+          alert('VaultGuard: Could not inject credentials into the detected form fields.');
+          widget.innerHTML = originalContent;
+        }
       } else {
         console.warn('No match or no form found — showing alert');
-        console.log('matchedCred:', matchedCred, '| forms[0]:', forms && forms[0]);
+        console.log('matchedCred:', matchedCred, '| forms count:', forms ? forms.length : 0);
         console.groupEnd();
         alert('VaultGuard: No matching active user credentials configured for this URL workspace.');
         widget.innerHTML = originalContent;

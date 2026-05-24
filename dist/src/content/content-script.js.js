@@ -93,6 +93,7 @@ function injectQuickFillOption(forms) {
         return host.split(':')[0];
       };
 
+<<<<<<< HEAD
       const getPort = (hostOrUrl) => {
         if (!hostOrUrl || typeof hostOrUrl !== 'string') return null;
         const host = ValidationUtils.extractRawHost(hostOrUrl) || hostOrUrl;
@@ -100,6 +101,8 @@ function injectQuickFillOption(forms) {
         return match ? match[1] : null;
       };
 
+=======
+>>>>>>> 94d93bc67e635dca8fbdf5c4e774b24b2000cd4a
       const pageHost = normalizeHost(window.location.host || window.location.hostname || currentDomain || '');
       const pageHostBase = stripPort(pageHost);
       const pageHref = window.location.href.toLowerCase();
@@ -113,6 +116,7 @@ function injectQuickFillOption(forms) {
 
       const credHostMatches = (ch) => {
         if (!ch || !pageHost) return false;
+<<<<<<< HEAD
         
         // Strict port validation: if both specify a port and they are different, do not match.
         const credPort = getPort(ch);
@@ -121,6 +125,8 @@ function injectQuickFillOption(forms) {
           return false;
         }
 
+=======
+>>>>>>> 94d93bc67e635dca8fbdf5c4e774b24b2000cd4a
         const credBase = stripPort(ch);
         return (
           ch === pageHost ||
@@ -152,6 +158,7 @@ function injectQuickFillOption(forms) {
         matchedCred = allCreds.find(c => {
           const domainCandidate = (c.domain || '').toString().toLowerCase();
           const urlCandidate = (c.url || '').toString().toLowerCase();
+<<<<<<< HEAD
 
           // Port check for secondary match
           const credPort = getPort(domainCandidate) || getPort(urlCandidate);
@@ -160,6 +167,8 @@ function injectQuickFillOption(forms) {
             return false;
           }
 
+=======
+>>>>>>> 94d93bc67e635dca8fbdf5c4e774b24b2000cd4a
           return (domainCandidate && pageHref.includes(domainCandidate)) ||
             (urlCandidate && pageHref.includes(urlCandidate));
         });

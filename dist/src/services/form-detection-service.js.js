@@ -20,6 +20,9 @@ const FIELD_PATTERNS = {
   ],
   otp: [
     'otp', 'pin', 'verification', 'authcode', '2fa', 'twofactor', 'two-factor', 'mfa', 'code'
+  ],
+  captcha: [
+    'captcha', 'security', 'code', 'verification', 'human'
   ]
 };
 
@@ -30,6 +33,7 @@ const BUTTON_PATTERNS = [
 const FORM_CANDIDATE_SELECTORS = [
   'form',
   'div[role="form"]',
+  'fieldset',
   '[data-form]',
   'section',
   'main',
@@ -121,6 +125,19 @@ class FormDetectionService {
   }
 
   /**
+   * Detect if the current page is currently showing a Captcha field.
+   * @returns {boolean}
+   */
+  static isCaptchaPresent() {
+    const captchaElements = Array.from(document.querySelectorAll(INPUT_SELECTORS.join(',') + ',img,canvas')).filter(el => {
+      if (!DOMUtils.isVisible(el)) return false;
+      const fingerprint = this._getFieldFingerprint(el);
+      return FIELD_PATTERNS.captcha.some(pattern => fingerprint.includes(pattern));
+    });
+    return captchaElements.length > 0;
+  }
+
+  /**
    * Inject credentials into a form and optionally submit it.
    * @param {Object} form
    * @param {string} username
@@ -147,8 +164,8 @@ class FormDetectionService {
       this._fillField(usernameField, username);
       this._fillField(passwordField, password);
 
-      if (this.isOtpStepPresent()) {
-        Logger.info('OTP step detected after credential injection; interrupting auto-submit');
+      if (this.isOtpStepPresent() || this.isCaptchaPresent()) {
+        Logger.info('OTP/Captcha detected after credential injection; interrupting auto-submit');
         this._markAutoLoggedIn(form);
         return true;
       }
@@ -367,6 +384,8 @@ class FormDetectionService {
       input.autocomplete,
       input.getAttribute('aria-label'),
       input.className,
+      input.getAttribute('alt'),
+      input.getAttribute('src'),
       this._getLabelText(input),
     ].filter(Boolean).join(' ');
     return values.toLowerCase();

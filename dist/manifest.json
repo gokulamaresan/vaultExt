@@ -14,6 +14,12 @@
   },
   "content_scripts": [
     {
+<<<<<<< HEAD
+=======
+      "js": [
+        "assets/content-script.js-loader-ByCfIlx3.js"
+      ],
+>>>>>>> 94d93bc67e635dca8fbdf5c4e774b24b2000cd4a
       "matches": [
         "<all_urls>"
       ],
@@ -53,8 +59,14 @@
         "<all_urls>"
       ],
       "resources": [
+<<<<<<< HEAD
         "**/*",
         "*"
+=======
+        "assets/validation-utils-DsvMz1ka.js",
+        "assets/message-handler-z-7G5nBl.js",
+        "assets/content-script.js-Bkp_wjrI.js"
+>>>>>>> 94d93bc67e635dca8fbdf5c4e774b24b2000cd4a
       ],
       "use_dynamic_url": false
     }
