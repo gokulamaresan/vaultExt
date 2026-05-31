@@ -145,8 +145,13 @@ class FormDetectionService {
    * @param {boolean} autoSubmit
    * @returns {boolean}
    */
-  static injectCredentials(form, username, password, autoSubmit = true) {
+  static injectCredentials(form, username, password, autoSubmit = true, _depth = 0) {
     try {
+      if (_depth > 3) {
+        Logger.error('Max recursion depth reached in injectCredentials');
+        return false;
+      }
+
       if (!form || !username || !password) {
         Logger.warn('injectCredentials requires form and credentials');
         return false;
@@ -154,11 +159,27 @@ class FormDetectionService {
 
       const usernameField = this._resolveField(form.usernameField?.selector);
       const passwordField = this._resolveField(form.passwordField?.selector);
+
       if (!usernameField || !passwordField) {
         Logger.warn('injectCredentials could not resolve selectors, retrying with live detect');
-        const fallback = this.detectForms()[0];
-        if (!fallback) return false;
-        return this.injectCredentials(fallback, username, password, autoSubmit);
+        const detected = this.detectForms();
+        const fallback = detected.find(f => f.id === form.id) || detected[0];
+        if (!fallback || fallback === form) {
+          // If we couldn't find a better form or it's the same one, try searching by name/ID directly
+          const uField = document.getElementById(form.usernameField?.name) || document.getElementsByName(form.usernameField?.name)[0];
+          const pField = document.getElementById(form.passwordField?.name) || document.getElementsByName(form.passwordField?.name)[0];
+          
+          if (uField && pField) {
+            this._fillField(uField, username);
+            this._fillField(pField, password);
+            if (autoSubmit && !this.isOtpStepPresent() && !this.isCaptchaPresent()) {
+              this._submitForm(form, uField, pField);
+            }
+            return true;
+          }
+          return false;
+        }
+        return this.injectCredentials(fallback, username, password, autoSubmit, _depth + 1);
       }
 
       this._fillField(usernameField, username);
@@ -527,6 +548,7 @@ class FormDetectionService {
   static _submitForm(form, usernameField, passwordField) {
     const submitButton = form.submitButton ? this._resolveField(form.submitButton) : null;
     if (submitButton && !submitButton.disabled) {
+      Logger.debug('Submitting via detected button');
       submitButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
       return;
     }
@@ -534,17 +556,20 @@ class FormDetectionService {
     const container = form.element || document.body;
     const fallbackButton = this._findSubmitButton(container) || this._findSubmitButton(document.body);
     if (fallbackButton) {
+      Logger.debug('Submitting via fallback button');
       fallbackButton.click();
       return;
     }
 
-    if (form.element && typeof form.element.requestSubmit === 'function') {
-      form.element.requestSubmit();
-      return;
-    }
-
-    if (form.element && typeof form.element.submit === 'function') {
-      form.element.submit();
+    // Fallback to native form submission if it's a real form
+    if (form.element && form.element.tagName === 'FORM') {
+      if (typeof form.element.requestSubmit === 'function') {
+        form.element.requestSubmit();
+        return;
+      }
+      if (typeof form.element.submit === 'function') {
+        form.element.submit();
+      }
     }
   }
 
@@ -556,11 +581,20 @@ class FormDetectionService {
    */
   static _getLabelText(input) {
     if (!input) return '';
+    
+    // 1. Standard linked labels
     const labels = input.labels ? Array.from(input.labels).map(label => label.textContent) : [];
     if (labels.length) {
       return labels.join(' ').trim();
     }
 
+    // 2. Search for label with 'for' attribute matching ID (even if not linked by browser)
+    if (input.id) {
+      const explicitLabel = document.querySelector(`label[for="${input.id}"]`);
+      if (explicitLabel) return explicitLabel.textContent.trim();
+    }
+
+    // 3. Parent label check
     let node = input.parentElement;
     while (node && node !== document.body) {
       if (node.tagName === 'LABEL') {
@@ -568,6 +602,15 @@ class FormDetectionService {
       }
       node = node.parentElement;
     }
+
+    // 4. Heuristic: search nearby text/labels (useful for BSNL-like structures)
+    try {
+      const container = input.closest('.form-group') || input.parentElement;
+      if (container) {
+        const nearbyLabel = container.querySelector('label');
+        if (nearbyLabel) return nearbyLabel.textContent.trim();
+      }
+    } catch (_) {}
 
     return '';
   }

@@ -93,7 +93,6 @@ function injectQuickFillOption(forms) {
         return host.split(':')[0];
       };
 
-<<<<<<< HEAD
       const getPort = (hostOrUrl) => {
         if (!hostOrUrl || typeof hostOrUrl !== 'string') return null;
         const host = ValidationUtils.extractRawHost(hostOrUrl) || hostOrUrl;
@@ -101,8 +100,6 @@ function injectQuickFillOption(forms) {
         return match ? match[1] : null;
       };
 
-=======
->>>>>>> 94d93bc67e635dca8fbdf5c4e774b24b2000cd4a
       const pageHost = normalizeHost(window.location.host || window.location.hostname || currentDomain || '');
       const pageHostBase = stripPort(pageHost);
       const pageHref = window.location.href.toLowerCase();
@@ -116,7 +113,6 @@ function injectQuickFillOption(forms) {
 
       const credHostMatches = (ch) => {
         if (!ch || !pageHost) return false;
-<<<<<<< HEAD
         
         // Strict port validation: if both specify a port and they are different, do not match.
         const credPort = getPort(ch);
@@ -125,8 +121,6 @@ function injectQuickFillOption(forms) {
           return false;
         }
 
-=======
->>>>>>> 94d93bc67e635dca8fbdf5c4e774b24b2000cd4a
         const credBase = stripPort(ch);
         return (
           ch === pageHost ||
@@ -158,7 +152,6 @@ function injectQuickFillOption(forms) {
         matchedCred = allCreds.find(c => {
           const domainCandidate = (c.domain || '').toString().toLowerCase();
           const urlCandidate = (c.url || '').toString().toLowerCase();
-<<<<<<< HEAD
 
           // Port check for secondary match
           const credPort = getPort(domainCandidate) || getPort(urlCandidate);
@@ -167,23 +160,37 @@ function injectQuickFillOption(forms) {
             return false;
           }
 
-=======
->>>>>>> 94d93bc67e635dca8fbdf5c4e774b24b2000cd4a
           return (domainCandidate && pageHref.includes(domainCandidate)) ||
             (urlCandidate && pageHref.includes(urlCandidate));
         });
         console.log('Secondary match:', matchedCred ? '✅ ' + matchedCred.name : '❌ none');
       }
 
-      if (matchedCred && forms && forms[0]) {
+      if (matchedCred && forms && forms.length > 0) {
         console.log('Injecting for:', matchedCred.name, '| user:', matchedCred.username);
         console.groupEnd();
-        FormDetectionService.injectCredentials(forms[0], matchedCred.username, matchedCred.password, true);
-        widget.innerHTML = `<span>✨ Credentials Injected!</span>`;
-        setTimeout(() => { widget.remove(); }, 1800);
+
+        // Iterate through all detected forms to ensure we find the right one (BSNL has multiple forms)
+        let fillSuccess = false;
+        for (const form of forms) {
+          const success = FormDetectionService.injectCredentials(form, matchedCred.username, matchedCred.password, true);
+          if (success) {
+            fillSuccess = true;
+            break;
+          }
+        }
+
+        if (fillSuccess) {
+          widget.innerHTML = `<span>✨ Credentials Injected!</span>`;
+          setTimeout(() => { widget.remove(); }, 1800);
+        } else {
+          console.warn('Injection failed on all forms');
+          alert('VaultGuard: Could not inject credentials into the detected form fields.');
+          widget.innerHTML = originalContent;
+        }
       } else {
         console.warn('No match or no form found — showing alert');
-        console.log('matchedCred:', matchedCred, '| forms[0]:', forms && forms[0]);
+        console.log('matchedCred:', matchedCred, '| forms count:', forms ? forms.length : 0);
         console.groupEnd();
         alert('VaultGuard: No matching active user credentials configured for this URL workspace.');
         widget.innerHTML = originalContent;

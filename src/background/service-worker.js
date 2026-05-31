@@ -93,6 +93,17 @@ const DEFAULT_CREDENTIALS = [
     avatarIcon: 'bsnl',
     avatarBg: '#005baa',
   },
+  {
+    id: 'cred_5',
+    name: 'Sky Auth',
+    username: '20240733',
+    password: '0733',
+    domain: 'sky:385',
+    url: 'http://sky:385/Auth/Index',
+    isFavorite: false,
+    avatarLetter: 'S',
+    avatarBg: '#ea580c',
+  },
 ];
 
 /**

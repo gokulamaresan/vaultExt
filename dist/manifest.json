@@ -14,17 +14,11 @@
   },
   "content_scripts": [
     {
-<<<<<<< HEAD
-=======
       "js": [
-        "assets/content-script.js-loader-ByCfIlx3.js"
+        "assets/content-script.js-loader-CeQytnfK.js"
       ],
->>>>>>> 94d93bc67e635dca8fbdf5c4e774b24b2000cd4a
       "matches": [
         "<all_urls>"
-      ],
-      "js": [
-        "src/content/content-script.js-loader.js"
       ],
       "run_at": "document_start",
       "all_frames": true,
@@ -59,14 +53,9 @@
         "<all_urls>"
       ],
       "resources": [
-<<<<<<< HEAD
-        "**/*",
-        "*"
-=======
         "assets/validation-utils-DsvMz1ka.js",
         "assets/message-handler-z-7G5nBl.js",
-        "assets/content-script.js-Bkp_wjrI.js"
->>>>>>> 94d93bc67e635dca8fbdf5c4e774b24b2000cd4a
+        "assets/content-script.js-BHVaGv-8.js"
       ],
       "use_dynamic_url": false
     }
